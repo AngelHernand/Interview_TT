@@ -1,0 +1,28 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.DotSettings.user
+
+# Node / Frontend
+users-web/node_modules/
+users-web/dist/
+users-web/.env
+users-web/.env.local
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
