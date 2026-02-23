@@ -186,17 +186,7 @@ El frontend estará disponible en `http://localhost:3000`.
 | **Admin** | Dashboard, gestión de usuarios (CRUD), test, perfil |
 | **User** | Dashboard (limitado), test de conocimientos, perfil |
 
----
 
-## Screenshots
-
-> La aplicación cuenta con un diseño enterprise moderno con paleta indigo/teal, sidebar oscuro con gradientes, y componentes interactivos con animaciones sutiles.
-
----
-
-## Autor
-
-**Angel Hernandez**
 
 ---
 
