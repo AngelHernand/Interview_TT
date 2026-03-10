@@ -6,6 +6,7 @@ import MainLayout from './components/Layout/MainLayout';
 import SmartRedirect from './components/Auth/SmartRedirect';
 
 // Pages
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -48,8 +49,9 @@ function App() {
             </Route>
           </Route>
 
-          {/* Smart Redirect: Admin → /dashboard, User → /test */}
-          <Route path="/" element={<SmartRedirect />} />
+          {/* Landing page (public) — redirige si ya está autenticado */}
+          <Route path="/" element={<Landing />} />
+          {/* Catch-all: redirige según rol o a landing */}
           <Route path="*" element={<SmartRedirect />} />
         </Routes>
       

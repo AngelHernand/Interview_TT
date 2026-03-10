@@ -8,11 +8,22 @@ obj/
 .vs/
 *.DotSettings.user
 
+# Environment variables
+.env
+.env.local
+.env.production
+
 # Node / Frontend
 users-web/node_modules/
 users-web/dist/
 users-web/.env
 users-web/.env.local
+
+# Logs
+Interview_Base/logs/
+
+# Temp files
+temp_hash.csx
 
 # OS
 Thumbs.db

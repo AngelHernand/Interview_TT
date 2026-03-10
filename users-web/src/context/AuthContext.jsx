@@ -63,11 +63,11 @@ export function AuthProvider({ children }) {
       await authService.logout();
       setUser(null);
       toast.success('Sesión cerrada');
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       // limpiar estado local
       setUser(null);
-      navigate('/login');
+      navigate('/');
     }
   };
 

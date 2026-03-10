@@ -20,7 +20,7 @@ export default function SmartRedirect() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (isAdmin) {

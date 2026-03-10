@@ -1,0 +1,122 @@
+# =====================================================
+#  Docker Compose — Interview_Base
+#  Backend (.NET 8) + Frontend (React) + SQL Server
+# =====================================================
+
+services:
+
+  # ── SQL Server ───────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: interview_sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-DockerPass123!}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./docker/init-db.sql:/docker-entrypoint-initdb/init-db.sql
+      - ./docker/init-db.sh:/docker-entrypoint-initdb/init-db.sh
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - app-network
+
+  # ── Inicialización automática de la BD ───────────────
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: interview_db_init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      SA_PASSWORD: "${SA_PASSWORD:-DockerPass123!}"
+    volumes:
+      - ./docker/init-db.sql:/docker-entrypoint-initdb/init-db.sql
+      - ./docker/init-db.sh:/docker-entrypoint-initdb/init-db.sh
+    entrypoint: ["/bin/bash", "/docker-entrypoint-initdb/init-db.sh"]
+    networks:
+      - app-network
+
+  # ── Backend (.NET 8 API) ─────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Interview_Base/Dockerfile
+    container_name: interview_backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: >-
+        Server=sqlserver;Database=UsersDB;
+        User Id=sa;Password=${SA_PASSWORD:-DockerPass123!};
+        TrustServerCertificate=True;Encrypt=False;
+      JwtSettings__Secret: "${JWT_SECRET:-Docker_Clave_Secreta_MuySegura_32chars!!}"
+      JwtSettings__Issuer: "UsersAPI"
+      JwtSettings__Audience: "UsersAPI"
+      JwtSettings__ExpirationMinutes: "60"
+      JwtSettings__RefreshTokenExpirationDays: "7"
+      Security__MaxLoginAttempts: "5"
+      Security__LockoutDurationMinutes: "30"
+    ports:
+      - "5240:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      sqlserver-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: curl -f http://localhost:8080/swagger/index.html || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - app-network
+
+  # ── Frontend (React + Nginx) ─────────────────────────
+  frontend:
+    build:
+      context: ./users-web
+      dockerfile: Dockerfile
+    container_name: interview_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ── Tests Backend (.NET xUnit) ───────────────────────
+  tests-backend:
+    build:
+      context: .
+      dockerfile: Interview_Base/Dockerfile
+      target: test
+    container_name: interview_tests_backend
+    profiles:
+      - test
+
+  # ── Tests Frontend (Vitest) ──────────────────────────
+  tests-frontend:
+    build:
+      context: ./users-web
+      dockerfile: Dockerfile
+      target: test
+    container_name: interview_tests_frontend
+    profiles:
+      - test
+
+volumes:
+  sqlserver_data:
+
+networks:
+  app-network:
+    driver: bridge

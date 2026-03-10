@@ -1,30 +1,42 @@
-# Consulte https://aka.ms/customizecontainer para aprender a personalizar su contenedor de depuración y cómo Visual Studio usa este Dockerfile para compilar sus imágenes para una depuración más rápida.
+# ── Build stage ──────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 
-# Esta fase se usa cuando se ejecuta desde VS en modo rápido (valor predeterminado para la configuración de depuración)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+# Restore
+COPY Interview_Base/Interview_Base.csproj Interview_Base/
+COPY Interview_Base.Tests/Interview_Base.Tests.csproj Interview_Base.Tests/
+COPY Interview_Base.sln .
+RUN dotnet restore
+
+# Copy all source
+COPY . .
+
+# Build
+WORKDIR /src/Interview_Base
+RUN dotnet build -c Release -o /app/build --no-restore
+
+# ── Test stage (se ejecuta con --target test) ────────
+FROM build AS test
+WORKDIR /src
+RUN dotnet test Interview_Base.Tests -c Release --no-restore --verbosity normal
+
+# ── Publish stage ────────────────────────────────────
+FROM build AS publish
+WORKDIR /src/Interview_Base
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
+
+# ── Runtime stage ────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Esta fase se usa para compilar el proyecto de servicio
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["Interview_Base/Interview_Base.csproj", "Interview_Base/"]
-RUN dotnet restore "./Interview_Base/Interview_Base.csproj"
-COPY . .
-WORKDIR "/src/Interview_Base"
-RUN dotnet build "./Interview_Base.csproj" -c $BUILD_CONFIGURATION -o /app/build
+# Health check
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
+  CMD curl -f http://localhost:8080/swagger/index.html || exit 1
 
-# Esta fase se usa para publicar el proyecto de servicio que se copiará en la fase final.
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Interview_Base.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-# Esta fase se usa en producción o cuando se ejecuta desde VS en modo normal (valor predeterminado cuando no se usa la configuración de depuración)
-FROM base AS final
-WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Interview_Base.dll"]
