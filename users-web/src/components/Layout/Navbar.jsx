@@ -9,6 +9,8 @@ import {
   User,
   LogOut,
   Hexagon,
+  BrainCircuit,
+  MessageSquare,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -81,6 +83,16 @@ export default function Sidebar() {
             <Link to="/test/stats" className={linkClass('/test/stats')}>
               <BarChart3 size={16} />
               Resultados
+            </Link>
+
+            {sectionLabel('Entrevista IA')}
+            <Link to="/interview/setup" className={linkClass('/interview/setup')}>
+              <BrainCircuit size={16} />
+              Nueva entrevista
+            </Link>
+            <Link to="/interview" className={linkClass('/interview')}>
+              <MessageSquare size={16} />
+              Mis entrevistas
             </Link>
           </>
         )}

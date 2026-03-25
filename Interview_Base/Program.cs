@@ -37,6 +37,7 @@ try
     builder.Services.AddSwaggerDocumentation();
     builder.Services.AddValidators();
     builder.Services.AddCorsPolicy();
+    builder.Services.AddInterviewServices(builder.Configuration);
 
     var app = builder.Build();
 

@@ -21,6 +21,12 @@ import TestHome from './pages/TestHome';
 import TestQuestion from './pages/TestQuestion';
 import TestStats from './pages/TestStats';
 
+// Interview Pages
+import InterviewSetup from './pages/InterviewSetup';
+import InterviewChat from './pages/InterviewChat';
+import InterviewResults from './pages/InterviewResults';
+import InterviewHistory from './pages/InterviewHistory';
+
 function App() {
   return (
     <BrowserRouter>
@@ -36,6 +42,10 @@ function App() {
               <Route path="/test" element={<TestHome />} />
               <Route path="/test/questions" element={<TestQuestion />} />
               <Route path="/test/stats" element={<TestStats />} />
+              <Route path="/interview" element={<InterviewHistory />} />
+              <Route path="/interview/setup" element={<InterviewSetup />} />
+              <Route path="/interview/:sessionId" element={<InterviewChat />} />
+              <Route path="/interview/:sessionId/results" element={<InterviewResults />} />
               <Route path="/profile" element={<Profile />} />
 
               {/* Admin Only Routes */}

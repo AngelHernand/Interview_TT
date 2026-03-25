@@ -137,6 +137,47 @@ public static class ServiceExtensions
         return services;
     }
 
+    // Registra servicios de entrevistas con IA (Ollama, Qdrant, behavioral, sesiones)
+    public static IServiceCollection AddInterviewServices(this IServiceCollection services, IConfiguration config)
+    {
+        // DbContext de solo lectura para preguntas behavioral del Scraping_module
+        var scrapingConn = config.GetConnectionString("ScrapingConnection");
+        if (!string.IsNullOrWhiteSpace(scrapingConn))
+        {
+            services.AddDbContext<ScrapingReadDbContext>(options =>
+                options.UseSqlServer(scrapingConn,
+                    sqlOptions => sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorNumbersToAdd: null))
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
+        }
+
+        // Cliente HTTP para Ollama (LLM local)
+        services.AddHttpClient<IOllamaClient, OllamaClient>(client =>
+        {
+            var baseUrl = config["Ollama:BaseUrl"] ?? "http://localhost:11434";
+            client.BaseAddress = new Uri(baseUrl);
+            var timeout = int.TryParse(config["Ollama:TimeoutSeconds"], out var t) ? t : 120;
+            client.Timeout = TimeSpan.FromSeconds(timeout);
+        });
+
+        // Cliente HTTP para Qdrant (búsqueda vectorial)
+        services.AddHttpClient<IQdrantSearchClient, QdrantSearchClient>(client =>
+        {
+            var baseUrl = config["Qdrant:BaseUrl"] ?? "http://localhost:6333";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        // Servicios scoped
+        services.AddScoped<IBehavioralQuestionProvider, BehavioralQuestionProvider>();
+        services.AddScoped<IInterviewSessionStore, InterviewSessionStore>();
+        services.AddScoped<IInterviewService, InterviewService>();
+
+        return services;
+    }
+
     //onfigura CORS permisivo para desarrollo
     public static IServiceCollection AddCorsPolicy(this IServiceCollection services)
     {

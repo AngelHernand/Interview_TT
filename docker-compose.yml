@@ -18,6 +18,7 @@ services:
     volumes:
       - sqlserver_data:/var/opt/mssql
       - ./docker/init-db.sql:/docker-entrypoint-initdb/init-db.sql
+      - ./docker/migration-interview-sessions.sql:/docker-entrypoint-initdb/migration-interview-sessions.sql
       - ./docker/init-db.sh:/docker-entrypoint-initdb/init-db.sh
     healthcheck:
       test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" || exit 1
@@ -39,6 +40,7 @@ services:
       SA_PASSWORD: "${SA_PASSWORD:-DockerPass123!}"
     volumes:
       - ./docker/init-db.sql:/docker-entrypoint-initdb/init-db.sql
+      - ./docker/migration-interview-sessions.sql:/docker-entrypoint-initdb/migration-interview-sessions.sql
       - ./docker/init-db.sh:/docker-entrypoint-initdb/init-db.sh
     entrypoint: ["/bin/bash", "/docker-entrypoint-initdb/init-db.sh"]
     networks:
@@ -64,6 +66,13 @@ services:
       JwtSettings__RefreshTokenExpirationDays: "7"
       Security__MaxLoginAttempts: "5"
       Security__LockoutDurationMinutes: "30"
+      ConnectionStrings__ScrapingConnection: >-
+        Server=sqlserver;Database=InterviewSimulator;
+        User Id=sa;Password=${SA_PASSWORD:-DockerPass123!};
+        TrustServerCertificate=True;Encrypt=False;
+      Ollama__BaseUrl: "http://host.docker.internal:11434"
+      Ollama__Model: "llama3.1:8b"
+      Qdrant__BaseUrl: "http://host.docker.internal:6333"
     ports:
       - "5240:8080"
     depends_on:

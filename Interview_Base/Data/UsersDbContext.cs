@@ -20,6 +20,8 @@ public partial class UsersDbContext : DbContext
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
     public virtual DbSet<LoginAttempt> LoginAttempts { get; set; }
     public virtual DbSet<VwUsuariosActivo> VwUsuariosActivos { get; set; }
+    public virtual DbSet<InterviewSession> InterviewSessions { get; set; }
+    public virtual DbSet<InterviewMessage> InterviewMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -109,7 +111,46 @@ public partial class UsersDbContext : DbContext
             entity.Property(e => e.Fecha).HasDefaultValueSql("(getdate())");
         });
 
-        // Vista: vw_UsuariosActivos 
+        // InterviewSession
+        modelBuilder.Entity<InterviewSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("InterviewSessions");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.TipoEntrevista).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Tecnologia).HasMaxLength(50);
+            entity.Property(e => e.Nivel).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Estado).HasMaxLength(20).IsRequired().HasDefaultValue("EnCurso");
+            entity.Property(e => e.SystemPrompt).IsRequired();
+            entity.Property(e => e.FechaInicio).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.DuracionMinutos).HasDefaultValue(30);
+
+            entity.HasOne(d => d.Usuario)
+                  .WithMany(p => p.InterviewSessions)
+                  .HasForeignKey(d => d.UsuarioId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // InterviewMessage
+        modelBuilder.Entity<InterviewMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("InterviewMessages");
+
+            entity.Property(e => e.Rol).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Contenido).IsRequired();
+            entity.Property(e => e.FechaCreacion).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Session)
+                  .WithMany(p => p.Mensajes)
+                  .HasForeignKey(d => d.SessionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.SessionId, e.Orden });
+        });
+
+        // Vista: vw_UsuariosActivos
         modelBuilder.Entity<VwUsuariosActivo>(entity =>
         {
             entity.HasNoKey();
